@@ -52,23 +52,99 @@ async function makePostRequest(body: string) {
 
 Deno.serve(async (req) => {
   try {
-    if (req.method !== "POST") {
-      return new Response("Invalid request method. Only POST is allowed.", { status: 405 });
+    console.log("Incoming request:", req.url);
+
+    // Handle CORS preflight requests
+    if (req.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        },
+      });
     }
 
-    const { phone, ref, amount } = await req.json();
-    if (!phone || !ref || !amount) {
-      return new Response("Missing required fields.", { status: 400 });
+    if (req.method !== "POST") {
+      return new Response(
+        JSON.stringify({ error: "Invalid request method. Only POST is allowed." }),
+        {
+          status: 405,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+    }
+
+    // Parse request body and validate required fields
+    const { phone, ref, amount, code } = await req.json();
+    if (!phone || !ref || !amount || !code) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields." }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+    }
+
+    // Check if the transaction already exists
+    const { data: existingTransaction, error: fetchError } = await supabase
+      .from("transactions")
+      .select("id")
+      .eq("mpesa_receipt_number", ref)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error("Error checking existing transaction:", fetchError);
+      return new Response(
+        JSON.stringify({ status: "error", message: "Error checking existing transaction." }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+    }
+
+    if (existingTransaction) {
+      return new Response(
+        JSON.stringify({ status: "error", message: "Transaction already exists." }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
     }
 
     // Insert a new record into the transactions table
     const { error: insertError } = await supabase
       .from("transactions")
-      .insert([{ amount, status: "pending", mpesa_receipt_number: ref, phone }]);
+      .insert([{ amount, status: "pending", mpesa_receipt_number: ref }]);
 
     if (insertError) {
       console.error("Failed to insert billing record:", insertError);
-      return new Response("Failed to initiate transaction.", { status: 500 });
+      return new Response(
+        JSON.stringify({ status: "error", message: "Failed to initiate transaction." }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
     }
 
     const requestBody = {
@@ -76,7 +152,7 @@ Deno.serve(async (req) => {
         id: ref,
         type: "charge",
         attributes: {
-          amount,
+          amount: amount,
           posted_at: new Date().toISOString(),
           reference: "TestRef",
           short_code: "174379",
@@ -88,13 +164,28 @@ Deno.serve(async (req) => {
 
     const responseData = await makePostRequest(JSON.stringify(requestBody));
 
-    return new Response(JSON.stringify({ status: "success", data: responseData }), {
-      headers: { "Content-Type": "application/json" },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({ status: "success", data: responseData }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        status: 200,
+      }
+    );
 
   } catch (error) {
     console.error("Unhandled error:", error);
-    return new Response("Internal server error", { status: 500 });
+    return new Response(
+      JSON.stringify({ status: "error", message: "Internal server error" }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    );
   }
 });
