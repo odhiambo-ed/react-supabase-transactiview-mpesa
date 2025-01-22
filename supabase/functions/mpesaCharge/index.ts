@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
     // Insert a new record into the transactions table
     const { error: insertError } = await supabase
       .from("transactions")
-      .insert([{ amount, status: "pending", mpesa_receipt_number: ref }]);
+      .insert([{ amount, status: "pending", mpesa_receipt_number: ref, phone }]);
 
     if (insertError) {
       console.error("Failed to insert billing record:", insertError);
