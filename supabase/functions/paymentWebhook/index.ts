@@ -14,7 +14,7 @@ serve(async (req) => {
     const body = await req.json();
     console.log("Received webhook:", body);
 
-    const mpesaReceiptNumber = body.data?.id; // Adjust based on your actual callback structure
+    const mpesaReceiptNumber = body.data?.id;
     const status = body.data?.attributes?.status === "success" ? "completed" : "failed";
 
     if (!mpesaReceiptNumber) {
