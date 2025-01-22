@@ -4,11 +4,11 @@ import crypto from "node:crypto";
 import { Buffer } from "node:buffer";
 
 // Load environment variables
-const QUIKK_URL = Deno.env.get("QUIKK_URL");
-const QUIKK_KEY = Deno.env.get("QUIKK_KEY");
-const QUIKK_SECRET = Deno.env.get("QUIKK_SECRET");
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+const QUIKK_URL = Deno.env.get("QUIKK_URL") as string;
+const QUIKK_KEY = Deno.env.get("QUIKK_KEY") as string;
+const QUIKK_SECRET = Deno.env.get("QUIKK_SECRET") as string;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") as string;
 
 if (!QUIKK_URL || !QUIKK_KEY || !QUIKK_SECRET || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
   throw new Error("Missing required environment variables");
@@ -26,7 +26,7 @@ function generateHmacSignature() {
   return [timestamp, authString];
 }
 
-async function makePostRequest(body) {
+async function makePostRequest(body: string) {
   const [timestamp, authString] = generateHmacSignature();
 
   const headers = {
