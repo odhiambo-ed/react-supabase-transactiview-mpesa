@@ -18,11 +18,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function generateHmacSignature() {
   const timestamp = new Date().toUTCString();
-  const toEncode = `date: ${timestamp}`; // Corrected string interpolation
+  const toEncode = `date: ${timestamp}`;
   const hmac = crypto.createHmac("SHA256", QUIKK_SECRET).update(toEncode).digest();
   const encoded = Buffer.from(hmac).toString("base64");
   const urlEncoded = encodeURIComponent(encoded);
-  const authString = `keyId="${QUIKK_KEY}",algorithm="hmac-sha256",headers="date",signature="${urlEncoded}"`; // Corrected string interpolation
+  const authString = `keyId="${QUIKK_KEY}",algorithm="hmac-sha256",headers="date",signature="${urlEncoded}"`;
   return [timestamp, authString];
 }
 
@@ -32,7 +32,7 @@ async function makePostRequest(body: string) {
   const headers = {
     "Content-Type": "application/vnd.api+json",
     "date": timestamp,
-    "Authorization": authString, // Ensure this is set correctly
+    "Authorization": authString,
   };
 
   const response = await fetch(QUIKK_URL, {
@@ -174,7 +174,6 @@ Deno.serve(async (req) => {
         status: 200,
       }
     );
-
   } catch (error) {
     console.error("Unhandled error:", error);
     return new Response(
