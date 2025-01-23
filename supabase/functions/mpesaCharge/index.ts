@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.39.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.4";
 import crypto from "node:crypto";
 import { Buffer } from "node:buffer";
 
