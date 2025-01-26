@@ -3,7 +3,7 @@ import './HomePage.css'
 const HomePage = () => {
   return (
     <>
-      <div>HomePage</div>
+      <div className='btn btn-primary'>Home</div>
       <p>Welcome to TransactiView</p>
     </>
   );
