@@ -1,3 +1,4 @@
+// File: supabase/functions/mpesa-stk-push/index.ts
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.4";
 import crypto from "node:crypto";
@@ -16,7 +17,6 @@ if (!QUIKK_URL || !QUIKK_KEY || !QUIKK_SECRET || !SUPABASE_URL || !SUPABASE_ANON
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Generate HMAC signature for secure API requests
 function generateHmacSignature() {
   const timestamp = new Date().toUTCString();
   const toEncode = `date: ${timestamp}`;
@@ -27,7 +27,6 @@ function generateHmacSignature() {
   return [timestamp, authString];
 }
 
-// Make a POST request to Quikk API
 async function makePostRequest(body: string) {
   const [timestamp, authString] = generateHmacSignature();
 
@@ -45,25 +44,22 @@ async function makePostRequest(body: string) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error("Error in Quikk API Request:", response.status, errorData);
+    console.error("Error in Quikk API Request:", response.status, errorData, response);
     throw new Error(errorData.errorMessage || "Unknown error occurred");
   }
 
   return response.json();
 }
 
-// Handle incoming requests
 Deno.serve(async (req) => {
   try {
-    console.log("Incoming request:", req.url);
-
-    // Handle CORS preflight requests
+    // CORS Preflight
     if (req.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
         headers: {
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Methods": "POST",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
         },
       });
@@ -71,7 +67,7 @@ Deno.serve(async (req) => {
 
     if (req.method !== "POST") {
       return new Response(
-        JSON.stringify({ error: "Invalid request method. Only POST is allowed." }),
+        JSON.stringify({ error: "Only POST method is allowed" }),
         {
           status: 405,
           headers: {
@@ -82,11 +78,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse request body and validate required fields
-    const { phone, ref, amount, code } = await req.json();
-    if (!phone || !ref || !amount || !code) {
+    // Parse request body
+    const { phone, amount, ref } = await req.json();
+    
+    // Validate input
+    if (!phone || !amount || !ref) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields." }),
+        JSON.stringify({ error: "Missing required fields" }),
         {
           status: 400,
           headers: {
@@ -97,17 +95,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if the transaction already exists
-    const { data: existingTransaction, error: fetchError } = await supabase
+    // Check for existing transaction
+    const { data: existingTransaction, error: checkError } = await supabase
       .from("transactions")
       .select("id")
       .eq("mpesa_receipt_number", ref)
       .maybeSingle();
 
-    if (fetchError) {
-      console.error("Error checking existing transaction:", fetchError);
+    if (checkError) {
+      console.error("Transaction check error:", checkError);
       return new Response(
-        JSON.stringify({ status: "error", message: "Error checking existing transaction." }),
+        JSON.stringify({ error: "Error checking transaction" }),
         {
           status: 500,
           headers: {
@@ -120,7 +118,7 @@ Deno.serve(async (req) => {
 
     if (existingTransaction) {
       return new Response(
-        JSON.stringify({ status: "error", message: "Transaction already exists." }),
+        JSON.stringify({ error: "Transaction already exists" }),
         {
           status: 400,
           headers: {
@@ -131,17 +129,21 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Insert a new record into the transactions table
-    const { error: insertError } = await supabase
+    // Insert initial transaction record
+    const { data: insertedTransaction, error: insertError } = await supabase
       .from("transactions")
-      .insert([{ amount, status: "pending", mpesa_receipt_number: ref, phone }])
-      .select("id")
-      .single();
+      .insert({
+        mpesa_receipt_number: ref,
+        phone,
+        amount,
+        status: "pending"
+      })
+      .select();
 
     if (insertError) {
-      console.error("Failed to insert billing record:", insertError);
+      console.error("Transaction insert error:", insertError);
       return new Response(
-        JSON.stringify({ status: "error", message: "Failed to initiate transaction." }),
+        JSON.stringify({ error: "Failed to create transaction" }),
         {
           status: 500,
           headers: {
@@ -152,7 +154,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Prepare request body for Quikk API
+    // Prepare Quikk API request body
     const requestBody = {
       data: {
         id: ref,
@@ -160,7 +162,7 @@ Deno.serve(async (req) => {
         attributes: {
           amount: amount,
           posted_at: new Date().toISOString(),
-          reference: "TestRef",
+          reference: "Payment",
           short_code: "174379",
           customer_no: phone,
           customer_type: "msisdn",
@@ -168,10 +170,15 @@ Deno.serve(async (req) => {
       },
     };
 
+    // Make Quikk API request
     const responseData = await makePostRequest(JSON.stringify(requestBody));
 
     return new Response(
-      JSON.stringify({ status: "success", data: responseData }),
+      JSON.stringify({ 
+        status: "success", 
+        data: responseData,
+        transaction_id: insertedTransaction[0].id 
+      }),
       {
         headers: {
           "Content-Type": "application/json",
