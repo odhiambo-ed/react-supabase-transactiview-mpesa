@@ -1,9 +1,13 @@
-import './Payment.css'
+import React from "react";
+import PaymentForm from "../../components/PaymentForm/PaymentForm";
 
-const Payment = () => {
+const Payment: React.FC = () => {
   return (
-    <div>Payment</div>
-  )
-}
+    <div className="p-4 w-60 border border-primary rounded">
+      <h1>Pay Now</h1>
+      <PaymentForm />
+    </div>
+  );
+};
 
-export default Payment
+export default Payment;
