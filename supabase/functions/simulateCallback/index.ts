@@ -1,39 +1,25 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.4";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
-const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_KEY") as string;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") as string;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-export async function simulateCallback(transactionId: string) {
-  // Simulate a delay for the callback
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+Deno.serve(async (req) => {
+  try {
+    if (req.method !== "POST") {
+      return new Response(
+        JSON.stringify({ error: "Invalid request method. Only POST is allowed." }),
+        { status: 405 }
+      );
+    }
 
-  // Simulate a successful transaction
-  const status = "completed";
-  const callbackData = {
-    status,
-    transactionId,
-    message: "Transaction completed successfully",
-  };
+    const { ref, status } = await req.json();
 
-  // Update the transaction status
-  const { error: updateError } = await supabase
-    .from("transactions")
-    .update({ status, completed_at: new Date() })
-    .eq("id", transactionId);
+    await supabase.from("transactions").update({ status }).eq("mpesa_receipt_number", ref);
 
-  if (updateError) {
-    console.error("Error updating transaction status:", updateError);
-    return;
+    return new Response(JSON.stringify({ status: "success" }), { status: 200 });
+  } catch {
+    return new Response(JSON.stringify({ status: "error", message: "Callback failed" }), { status: 500 });
   }
-
-  // Insert the callback data into the payment_callbacks table
-  const { error: insertError } = await supabase
-    .from("payment_callbacks")
-    .insert([{ transaction_id: transactionId, callback_data: callbackData }]);
-
-  if (insertError) {
-    console.error("Error inserting callback data:", insertError);
-  }
-}
+});
