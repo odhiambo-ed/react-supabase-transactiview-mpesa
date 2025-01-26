@@ -2,7 +2,10 @@ import './Dashboard.css'
 
 const Dashboard = () => {
   return (
-    <div>Dashboard</div>
+      <>
+          <div>Dashboard</div>
+          <p>Transaction Stats</p>
+      </>
   )
 }
 
