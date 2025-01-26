@@ -1,9 +1,10 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Sidebar from "./components/SideBar";
-import TopNavbar from "./components/TopNavbar";
-import Dashboard from "./components/Dashboard";
-import HomePage from "./pages/HomePage";
+import Dashboard from "./pages/Dashboard/Dashboard";
+import HomePage from "./pages/HomePage/HomePage";
+import Payment from "./pages/Payment/Payment";
+import Sidebar from "./components/Sidebar/Sidebar";
+import TopNavbar from "./components/TopNavbar/TopNavbar";
 
 const App: React.FC = () => {
   return (
