@@ -1,17 +1,16 @@
 import React, { useState } from "react";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
 const PaymentForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [checkingStatus, setCheckingStatus] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState(0);
   const [transactionRef, setTransactionRef] = useState<string | null>(null);
 
-  const navigate = useNavigate();
+//   const navigate = useNavigate();
   const code = "TestCode";
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,12 +19,12 @@ const PaymentForm: React.FC = () => {
     setError("");
     setSuccess(false);
 
-    const ref = `TXN-${Date.now()}`;
+    const ref = `TXN-${Date.now()}`; // Generate a unique transaction reference
     setTransactionRef(ref);
 
     try {
       const response = await fetch(
-        `https://zrrjnyrwphjuscpmpwql.supabase.co/functions/v1/mpesaCharge?ref=${ref}`,
+        `https://lceqxhhumahvtzkicksx.supabase.co/functions/v1/mpesaCharge`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -37,9 +36,7 @@ const PaymentForm: React.FC = () => {
 
       if (response.ok && data.status === "success") {
         setSuccess(true);
-        setTimeout(() => {
-        //   checkPaymentStatus(ref);
-        }, 5000); 
+        // Optionally, you can check the payment status here if needed
       } else {
         throw new Error(data.message || "Payment failed. Please try again.");
       }
@@ -47,6 +44,7 @@ const PaymentForm: React.FC = () => {
       setError(
         err instanceof Error ? err.message : "An unknown error occurred."
       );
+    } finally {
       setLoading(false);
     }
   };
@@ -91,14 +89,9 @@ const PaymentForm: React.FC = () => {
           Processing payment...
         </Alert>
       )}
-      {checkingStatus && (
-        <Alert variant="warning" className="mt-3">
-          Waiting for payment confirmation...
-        </Alert>
-      )}
       {success && (
         <Alert variant="success" className="mt-3">
-          Payment successful!
+          Payment successful! Transaction Reference: {transactionRef}
         </Alert>
       )}
       {error && (
