@@ -16,6 +16,7 @@ if (!QUIKK_URL || !QUIKK_KEY || !QUIKK_SECRET || !SUPABASE_URL || !SUPABASE_ANON
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Generate HMAC signature for secure API requests
 function generateHmacSignature() {
   const timestamp = new Date().toUTCString();
   const toEncode = `date: ${timestamp}`;
@@ -26,6 +27,7 @@ function generateHmacSignature() {
   return [timestamp, authString];
 }
 
+// Make a POST request to Quikk API
 async function makePostRequest(body: string) {
   const [timestamp, authString] = generateHmacSignature();
 
@@ -43,13 +45,14 @@ async function makePostRequest(body: string) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error("Error in Quikk API Request:", response.status, errorData, response);
+    console.error("Error in Quikk API Request:", response.status, errorData);
     throw new Error(errorData.errorMessage || "Unknown error occurred");
   }
 
   return response.json();
 }
 
+// Handle incoming requests
 Deno.serve(async (req) => {
   try {
     console.log("Incoming request:", req.url);
@@ -129,7 +132,7 @@ Deno.serve(async (req) => {
     }
 
     // Insert a new record into the transactions table
-    const { data: newTransaction, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from("transactions")
       .insert([{ amount, status: "pending", mpesa_receipt_number: ref, phone }])
       .select("id")
@@ -149,9 +152,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Call the simulateCallback function
-    await simulateCallback(newTransaction.id);
-
+    // Prepare request body for Quikk API
     const requestBody = {
       data: {
         id: ref,
