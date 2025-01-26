@@ -11,7 +11,7 @@ const Sidebar: React.FC = () => {
         <Nav.Link as={Link} to="/" className="text-white">
           TransactiView
         </Nav.Link>
-        <Nav.Link as={Link} to="HomePage" className="text-white">
+        <Nav.Link as={Link} to="/" className="text-white">
           Home
         </Nav.Link>
         <Nav.Link as={Link} to="/payment" className="text-white">
