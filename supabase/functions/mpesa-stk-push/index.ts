@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
         attributes: {
           amount: amount,
           posted_at: new Date().toISOString(),
-          reference: "Payment",
+          reference: ref,
           short_code: "174379",
           customer_no: phone,
           customer_type: "msisdn",
