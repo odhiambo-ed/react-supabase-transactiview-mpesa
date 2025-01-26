@@ -50,40 +50,6 @@ async function makePostRequest(body: string) {
   return response.json();
 }
 
-// Simulate Callback Function
-async function simulateCallback(transactionId: string) {
-  // Simulate a delay for the callback
-  await new Promise((resolve) => setTimeout(resolve, 3000));
-
-  // Simulate a successful transaction
-  const status = "completed";
-  const callbackData = {
-    status,
-    transactionId,
-    message: "Transaction completed successfully",
-  };
-
-  // Update the transaction status
-  const { error: updateError } = await supabase
-    .from("transactions")
-    .update({ status, completed_at: new Date() })
-    .eq("id", transactionId);
-
-  if (updateError) {
-    console.error("Error updating transaction status:", updateError);
-    return;
-  }
-
-  // Insert the callback data into the payment_callbacks table
-  const { error: insertError } = await supabase
-    .from("payment_callbacks")
-    .insert([{ transaction_id: transactionId, callback_data: callbackData }]);
-
-  if (insertError) {
-    console.error("Error inserting callback data:", insertError);
-  }
-}
-
 Deno.serve(async (req) => {
   try {
     console.log("Incoming request:", req.url);
