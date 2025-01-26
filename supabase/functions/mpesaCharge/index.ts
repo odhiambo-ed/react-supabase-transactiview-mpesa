@@ -50,6 +50,40 @@ async function makePostRequest(body: string) {
   return response.json();
 }
 
+// Simulate Callback Function
+async function simulateCallback(transactionId: string) {
+  // Simulate a delay for the callback
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
+  // Simulate a successful transaction
+  const status = "completed";
+  const callbackData = {
+    status,
+    transactionId,
+    message: "Transaction completed successfully",
+  };
+
+  // Update the transaction status
+  const { error: updateError } = await supabase
+    .from("transactions")
+    .update({ status, completed_at: new Date() })
+    .eq("id", transactionId);
+
+  if (updateError) {
+    console.error("Error updating transaction status:", updateError);
+    return;
+  }
+
+  // Insert the callback data into the payment_callbacks table
+  const { error: insertError } = await supabase
+    .from("payment_callbacks")
+    .insert([{ transaction_id: transactionId, callback_data: callbackData }]);
+
+  if (insertError) {
+    console.error("Error inserting callback data:", insertError);
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     console.log("Incoming request:", req.url);
@@ -129,9 +163,11 @@ Deno.serve(async (req) => {
     }
 
     // Insert a new record into the transactions table
-    const { error: insertError } = await supabase
+    const { data: newTransaction, error: insertError } = await supabase
       .from("transactions")
-      .insert([{ amount, status: "pending", mpesa_receipt_number: ref, phone }]);
+      .insert([{ amount, status: "pending", mpesa_receipt_number: ref, phone }])
+      .select("id")
+      .single();
 
     if (insertError) {
       console.error("Failed to insert billing record:", insertError);
@@ -146,6 +182,9 @@ Deno.serve(async (req) => {
         }
       );
     }
+
+    // Call the simulateCallback function
+    await simulateCallback(newTransaction.id);
 
     const requestBody = {
       data: {
