@@ -7,6 +7,18 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") as string;
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 Deno.serve(async (req) => {
+  // Handle Preflight Requests (CORS)
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*", // Allow requests from any origin
+        "Access-Control-Allow-Methods": "GET", // Allowed methods
+        "Access-Control-Allow-Headers": "Content-Type, Authorization", // Allowed headers
+      },
+    });
+  }
+
   try {
     const url = new URL(req.url);
     const transactionId = url.searchParams.get("transactionId");
@@ -46,7 +58,7 @@ Deno.serve(async (req) => {
 
     if (!data) {
       return new Response(
-        JSON.stringify({ status: "pending" }), // Or "not found" if appropriate
+        JSON.stringify({ status: "pending" }),
         {
           headers: {
             "Content-Type": "application/json",
