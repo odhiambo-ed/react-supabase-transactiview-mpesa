@@ -1,3 +1,4 @@
+// File: PaymentForm.js
 import { useState } from "react";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
 
@@ -9,7 +10,6 @@ const PaymentForm = () => {
   const [amount, setAmount] = useState(0);
   const [transactionRef, setTransactionRef] = useState("");
 
-  // Function to check the status of the transaction
   const checkTransactionStatus = async (transactionId: unknown) => {
     try {
       const response = await fetch(
@@ -58,7 +58,6 @@ const PaymentForm = () => {
       const data = await response.json();
 
       if (response.ok && data.status === "success") {
-        // Optionally, check the payment status here if needed
         checkTransactionStatus(data.transaction_id);
       } else {
         throw new Error(data.message || "Payment failed. Please try again.");
