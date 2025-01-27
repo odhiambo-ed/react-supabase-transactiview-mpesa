@@ -1,42 +1,65 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
-// import { useNavigate } from "react-router-dom";
 
-const PaymentForm: React.FC = () => {
+const PaymentForm = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState(0);
-  const [transactionRef, setTransactionRef] = useState<string | null>(null);
+  const [transactionRef, setTransactionRef] = useState("");
 
-//   const navigate = useNavigate();
-  const code = "TestCode";
+  // Function to check the status of the transaction
+  const checkTransactionStatus = async (transactionId: unknown) => {
+    try {
+      const response = await fetch(
+        `https://lceqxhhumahvtzkicksx.supabase.co/functions/v1/mpesa-callback-handler?transaction_id=${transactionId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+      if (response.ok && data.status === "success") {
+        setSuccess(true);
+      } else {
+        throw new Error(data.message || "Failed to confirm payment status.");
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to fetch transaction status."
+      );
+    }
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     setSuccess(false);
 
-    const ref = `TXN-${Date.now()}`; // Generate a unique transaction reference
+    const ref = `TXN-${Date.now()}`;
     setTransactionRef(ref);
 
     try {
       const response = await fetch(
-        `https://lceqxhhumahvtzkicksx.supabase.co/functions/v1/mpesaCharge`,
+        "https://lceqxhhumahvtzkicksx.supabase.co/functions/v1/mpesa-stk-push",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone, ref, amount, code }),
+          body: JSON.stringify({ phone, amount, ref }),
         }
       );
 
       const data = await response.json();
 
       if (response.ok && data.status === "success") {
-        setSuccess(true);
-        // Optionally, you can check the payment status here if needed
+        // Optionally, check the payment status here if needed
+        checkTransactionStatus(data.transaction_id);
       } else {
         throw new Error(data.message || "Payment failed. Please try again.");
       }
