@@ -7,6 +7,18 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") as string;
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 Deno.serve(async (req) => {
+  // Handle Preflight Requests (CORS)
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*", // Allow requests from any origin
+        "Access-Control-Allow-Methods": "POST", // Allowed methods
+        "Access-Control-Allow-Headers": "Content-Type, Authorization", // Allowed headers
+      },
+    });
+  }
+
   try {
     if (req.method !== "POST") {
       return new Response(
@@ -21,8 +33,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Simulated Quikk Callback Data
-    // In a real scenario, this would be sent by Quikk to your callback URL.
     const callbackData = await req.json();
     const { transaction_id, result_code, result_desc } = callbackData;
 
@@ -39,14 +49,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update the transaction in Supabase
     const { error } = await supabase
       .from("transactions")
       .update({
         status: result_code === "0" ? "success" : "failed",
         result_code,
         result_desc,
-        transaction_id, // Update with Quikk's transaction ID
+        transaction_id,
       })
       .eq("mpesa_receipt_number", transaction_id);
 
