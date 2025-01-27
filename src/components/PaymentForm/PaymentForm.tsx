@@ -24,7 +24,7 @@ const PaymentForm = () => {
           },
         }
       );
-      const data = await response.json();
+      const data = await response.json(); // Await the response here
       if (response.ok) {
         if (data.status === "success") {
           setSuccess(true);
@@ -74,7 +74,8 @@ const PaymentForm = () => {
       const data = await response.json();
 
       if (response.ok && data.status === "success") {
-        setTransactionId(data.transaction_id);
+        // Use mpesa_receipt_number as transactionId
+        setTransactionId(data.data.data.attributes.resource_id);
       } else {
         throw new Error(data.message || "Payment failed. Please try again.");
       }
@@ -101,6 +102,7 @@ const PaymentForm = () => {
   }, [paymentInitiated, transactionId, success, error]);
 
   return (
+    // Rest of the form code remains the same...
     <div>
       <Form onSubmit={handleSubmit}>
         <Form.Group controlId="formPhone">
