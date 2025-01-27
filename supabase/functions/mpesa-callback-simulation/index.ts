@@ -1,4 +1,3 @@
-// File: supabase/functions/mpesa-callback-simulation/index.ts
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.4";
 
@@ -11,6 +10,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 Deno.serve(async (req) => {
   try {
     // Validate request method
+    if (req.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST",
+          "Access-Control-Allow-Headers": "Content-Type, x-webhook-secret",
+        },
+      });
+    }
+
     if (req.method !== "POST") {
       return new Response(
         JSON.stringify({ error: "Only POST method is allowed" }),
