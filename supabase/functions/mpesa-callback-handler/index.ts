@@ -6,7 +6,7 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY as string;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-async function handleCallback(req: { json: () => PromiseLike<{ transaction_id: unknown; status: unknown; }> | { transaction_id: any; status: any; }; }) {
+async function handleCallback(req: { json: () => PromiseLike<{ transaction_id: unknown; status: unknown; }> | { transaction_id: unknown; status: unknown; }; }) {
   const { transaction_id, status } = await req.json();
 
   const { data, error } = await supabase
