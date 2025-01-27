@@ -43,7 +43,7 @@ async function makePostRequest(body: string) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error("Error in Quikk API Request:", response.status, errorData, response);
+    console.error("Error in Quikk API Request:", response.status, errorData);
     throw new Error(errorData.errorMessage || "Unknown error occurred");
   }
 
@@ -52,7 +52,6 @@ async function makePostRequest(body: string) {
 
 Deno.serve(async (req) => {
   try {
-    // CORS Preflight
     if (req.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
@@ -77,11 +76,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse request body
-    const { phone, amount, ref } = await req.json();
-    
-    // Validate input
-    if (!phone || !amount || !ref) {
+    const { phone, amount, reference } = await req.json();
+
+    if (!phone || !amount || !reference) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         {
@@ -94,11 +91,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check for existing transaction
+    // Generate a unique transaction ID
+    const transactionId = crypto.randomUUID();
+
     const { data: existingTransaction, error: checkError } = await supabase
       .from("transactions")
       .select("id")
-      .eq("mpesa_receipt_number", ref)
+      .eq("mpesa_receipt_number", transactionId)
       .maybeSingle();
 
     if (checkError) {
@@ -128,11 +127,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Insert initial transaction record
     const { data: insertedTransaction, error: insertError } = await supabase
       .from("transactions")
       .insert({
-        mpesa_receipt_number: ref,
+        mpesa_receipt_number: transactionId,
         phone,
         amount,
         status: "pending"
@@ -153,24 +151,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Prepare Quikk API request body
-    const requestBody = {
+    const requestBody = JSON.stringify({
       data: {
-        id: ref,
+        id: transactionId,
         type: "charge",
         attributes: {
           amount: amount,
           posted_at: new Date().toISOString(),
-          reference: ref,
+          reference: reference,
           short_code: "174379",
           customer_no: phone,
           customer_type: "msisdn",
         },
       },
-    };
+    });
 
-    // Make Quikk API request
-    const responseData = await makePostRequest(JSON.stringify(requestBody));
+    const responseData = await makePostRequest(requestBody);
 
     return new Response(
       JSON.stringify({ 
