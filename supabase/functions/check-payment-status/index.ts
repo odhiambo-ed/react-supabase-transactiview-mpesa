@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     const { data, error } = await supabase
       .from("transactions")
       .select("status")
-      .eq("id", transactionId)
+      .eq("mpesa_receipt_number", transactionId) // Use mpesa_receipt_number for querying
       .maybeSingle();
 
     if (error) {
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
 
     if (!data) {
       return new Response(
-        JSON.stringify({ status: "pending" }),
+        JSON.stringify({ status: "pending" }), // Or "not found" if appropriate
         {
           headers: {
             "Content-Type": "application/json",
