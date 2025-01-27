@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
 
     const { phone, amount, ref: reference, code } = await req.json(); // Adjusted to destruct `ref` as `reference`
 
-    if (!phone || !amount || !reference) {
+    if (!phone || !amount || !reference || !code) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         {
@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
           amount: amount,
           posted_at: new Date().toISOString(),
           reference: reference,
-          short_code: "174379",
+          short_code: code,
           customer_no: phone,
           customer_type: "msisdn",
         },
@@ -178,14 +178,13 @@ Deno.serve(async (req) => {
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
-        },
-        status: 200,
+        }
       }
     );
   } catch (error) {
-    console.error("Unhandled error:", error);
+    console.error("Error processing request:", error);
     return new Response(
-      JSON.stringify({ status: "error", message: "Internal server error" }),
+      JSON.stringify({ error: "Internal server error" }),
       {
         status: 500,
         headers: {
