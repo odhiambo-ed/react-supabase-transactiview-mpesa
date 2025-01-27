@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { phone, amount, ref: reference, code } = await req.json(); // Adjusted to destruct `ref` as `reference`
+    const { phone, amount, ref: reference, code } = await req.json();
 
     if (!phone || !amount || !reference || !code) {
       return new Response(
