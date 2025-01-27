@@ -76,9 +76,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { phone, amount, ref: reference, code } = await req.json();
+    const { phone, amount, ref: reference } = await req.json();
 
-    if (!phone || !amount || !reference || !code) {
+    if (!phone || !amount || !reference) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         {
@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
           amount: amount,
           posted_at: new Date().toISOString(),
           reference: reference,
-          short_code: code,
+          short_code: "174379",
           customer_no: phone,
           customer_type: "msisdn",
         },
