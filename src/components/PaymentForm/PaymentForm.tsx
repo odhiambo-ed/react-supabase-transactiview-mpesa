@@ -1,5 +1,4 @@
-// File: PaymentForm.js
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
 
 const PaymentForm = () => {
@@ -9,11 +8,15 @@ const PaymentForm = () => {
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState(0);
   const [transactionRef, setTransactionRef] = useState("");
+  const [paymentInitiated, setPaymentInitiated] = useState(false);
+  const intervalRef = useRef<null | NodeJS.Timeout>(null);
+  const [transactionId, setTransactionId] = useState<string | null>(null);
 
-  const checkTransactionStatus = async (transactionId: unknown) => {
+  // Function to check the status of the transaction
+  const checkTransactionStatus = async (transactionId: string) => {
     try {
       const response = await fetch(
-        `https://lceqxhhumahvtzkicksx.supabase.co/functions/v1/mpesa-callback-handler?transaction_id=${transactionId}`,
+        `https://lceqxhhumahvtzkicksx.supabase.co/functions/v1/check-payment-status?transactionId=${transactionId}`,
         {
           method: "GET",
           headers: {
@@ -22,8 +25,20 @@ const PaymentForm = () => {
         }
       );
       const data = await response.json();
-      if (response.ok && data.status === "success") {
-        setSuccess(true);
+      if (response.ok) {
+        if (data.status === "success") {
+          setSuccess(true);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+          }
+          setLoading(false);
+        } else if (data.status === "failed") {
+          setError("Payment failed.");
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+          }
+          setLoading(false);
+        }
       } else {
         throw new Error(data.message || "Failed to confirm payment status.");
       }
@@ -36,11 +51,12 @@ const PaymentForm = () => {
     }
   };
 
-  const handleSubmit = async (e: { preventDefault: () => void; }) => {
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     setSuccess(false);
+    setPaymentInitiated(true);
 
     const ref = `TXN-${Date.now()}`;
     setTransactionRef(ref);
@@ -58,7 +74,7 @@ const PaymentForm = () => {
       const data = await response.json();
 
       if (response.ok && data.status === "success") {
-        checkTransactionStatus(data.transaction_id);
+        setTransactionId(data.transaction_id);
       } else {
         throw new Error(data.message || "Payment failed. Please try again.");
       }
@@ -66,10 +82,23 @@ const PaymentForm = () => {
       setError(
         err instanceof Error ? err.message : "An unknown error occurred."
       );
-    } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (paymentInitiated && transactionId && !success && !error) {
+      intervalRef.current = setInterval(() => {
+        checkTransactionStatus(transactionId);
+      }, 5000);
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [paymentInitiated, transactionId, success, error]);
 
   return (
     <div>
@@ -78,7 +107,7 @@ const PaymentForm = () => {
           <Form.Label>Phone Number</Form.Label>
           <Form.Control
             type="text"
-            placeholder="Enter phone number"
+            placeholder="Enter phone number (e.g., 254...)"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             required
