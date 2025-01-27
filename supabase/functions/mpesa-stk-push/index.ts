@@ -95,40 +95,6 @@ Deno.serve(async (req) => {
     // Generate a unique transaction ID to be used as mpesa_receipt_number
     const transactionId = crypto.randomUUID();
 
-    // Check for existing transaction (prevent duplicates)
-    const { data: existingTransaction, error: checkError } = await supabase
-      .from("transactions")
-      .select("id")
-      .eq("mpesa_receipt_number", transactionId)
-      .maybeSingle();
-
-    if (checkError) {
-      console.error("Transaction check error:", checkError);
-      return new Response(
-        JSON.stringify({ error: "Error checking transaction" }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        },
-      );
-    }
-
-    if (existingTransaction) {
-      return new Response(
-        JSON.stringify({ error: "Transaction already exists" }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        },
-      );
-    }
-
     // Insert new transaction (status: pending)
     const { data: insertedTransaction, error: insertError } = await supabase
       .from("transactions")
@@ -173,52 +139,12 @@ Deno.serve(async (req) => {
     // Make request to Quikk API
     const responseData = await makePostRequest(requestBody);
 
-    // Extract resource_id from Quikk API response
-    const resourceId = responseData.data.attributes.resource_id;
-
-    // Immediately after successful Quikk API call, simulate the callback
-    const simResponse = await fetch(
-      "https://lceqxhhumahvtzkicksx.supabase.co/functions/v1/simulate-payment-callback",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          transaction_id: transactionId, // Pass mpesa_receipt_number
-          result_code: 0, // Simulate a successful transaction (0 for success)
-        }),
-      },
-    );
-
-    if (!simResponse.ok) {
-      const errorData = await simResponse.json();
-      console.error(
-        "Error simulating payment callback:",
-        simResponse.status,
-        errorData,
-      );
-      return new Response(
-        JSON.stringify({
-          error: "Failed to simulate payment callback",
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        },
-      );
-    }
-
     // Return success response with resourceId from Quikk API
     return new Response(
       JSON.stringify({
         status: "success",
         data: responseData,
-        transaction_id: resourceId, // Return resourceId from Quikk
+        transaction_id: insertedTransaction[0].id,
       }),
       {
         headers: {
