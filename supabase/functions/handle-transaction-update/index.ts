@@ -1,5 +1,7 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.4";
 
+// Load environment variables
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") as string;
 
@@ -11,87 +13,41 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 Deno.serve(async (req) => {
   try {
-    const { record: newTransaction } = await req.json();
+    const body = await req.json();
+    console.log("Received request body:", body);
 
-    if (newTransaction && newTransaction.status === 'pending') {
-      // Simulate payment processing time
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+    // Example: Insert the received data into a table called 'requests'
+    const { data, error } = await supabase
+      .from('requests')
+      .insert([{ requestData: body }]);
 
-      // Randomly determine success or failure (90% success, 10% failure)
-      const isSuccess = Math.random() < 0.9;
-      const newStatus = isSuccess ? "completed" : "failed";
-
-      // Update transaction status
-      const { error: updateError } = await supabase
-        .from("transactions")
-        .update({
-          status: newStatus,
-          completed_at: isSuccess ? new Date().toISOString() : null,
-        })
-        .eq("id", newTransaction.id);
-
-      if (updateError) {
-        throw new Error(`Failed to update transaction: ${updateError.message}`);
-      }
-
-      // If successful, insert dummy callback data
-      if (isSuccess) {
-        const dummyCallbackData = {
-          Body: {
-            stkCallback: {
-              MerchantRequestID: "dummy-merchant-req-id",
-              CheckoutRequestID: "dummy-checkout-req-id",
-              ResultCode: 0,
-              ResultDesc: "The service request is processed successfully.",
-              CallbackMetadata: {
-                Item: [
-                  {
-                    Name: "Amount",
-                    Value: newTransaction.amount,
-                  },
-                  {
-                    Name: "MpesaReceiptNumber",
-                    Value: newTransaction.mpesa_receipt_number,
-                  },
-                  {
-                    Name: "TransactionDate",
-                    Value: new Date().toISOString(),
-                  },
-                  {
-                    Name: "PhoneNumber",
-                    Value: newTransaction.phone,
-                  },
-                ],
-              },
-            },
-          },
-        };
-
-        const { error: callbackError } = await supabase
-          .from("payment_callbacks")
-          .insert({
-            transaction_id: newTransaction.id,
-            callback_data: dummyCallbackData,
-          });
-
-        if (callbackError) {
-          throw new Error(
-            `Failed to insert callback data: ${callbackError.message}`
-          );
-        }
-      }
+    if (error) {
+      throw error;
     }
 
-    return new Response(JSON.stringify({ message: "Transaction updated" }), {
-      headers: { "Content-Type": "application/json" },
-      status: 200,
-    });
-  } catch (error: unknown) {
-    console.error("Error handling transaction update:", error);
+    return new Response(
+      JSON.stringify({ message: "Data inserted successfully", data }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error("Error:", error);
+
+    // Ensure error is of type Error to safely access error.message
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { "Content-Type": "application/json" },
-      status: 500,
-    });
+
+    return new Response(
+      JSON.stringify({ error: "Internal Server Error", message: errorMessage }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        status: 500,
+      }
+    );
   }
 });
