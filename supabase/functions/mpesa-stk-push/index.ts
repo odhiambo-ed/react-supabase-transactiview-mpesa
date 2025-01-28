@@ -139,6 +139,24 @@ Deno.serve(async (req) => {
     // Make request to Quikk API
     const responseData = await makePostRequest(requestBody);
 
+    // Call handle-transaction-update to simulate callback after inserting the transaction
+    fetch('https://lceqxhhumahvtzkicksx.supabase.co/functions/v1/handle-transaction-update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({ transactionId: insertedTransaction[0].id })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to simulate payment callback');
+      }
+      return response.json();
+    })
+    .then(data => console.log('Callback simulation response:', data))
+    .catch(error => console.error('Error simulating callback:', error));
+
     // Return success response with transaction_id (database ID)
     return new Response(
       JSON.stringify({
