@@ -10,6 +10,18 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 Deno.serve(async (req) => {
+  // Handle Preflight Requests (CORS) for all methods
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*", // Allow requests from any origin
+        "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS", // Allowed methods
+        "Access-Control-Allow-Headers": "Content-Type, Authorization", // Allowed headers
+      },
+    });
+  }
+
   try {
     const url = new URL(req.url);
     const transactionId = url.searchParams.get("transactionId");
@@ -18,7 +30,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Transaction ID is required" }),
         {
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
           status: 400,
         }
       );
@@ -38,14 +50,14 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Transaction not found" }),
         {
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
           status: 404,
         }
       );
     }
 
     return new Response(JSON.stringify({ status: data.status, data }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
       status: 200,
     });
   } catch (error) {
@@ -53,7 +65,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       {
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
         status: 500,
       }
     );
