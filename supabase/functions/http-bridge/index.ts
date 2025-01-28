@@ -1,9 +1,11 @@
-// supabase/functions/http-bridge/index.ts
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 Deno.serve(async (req) => {
   try {
     const { url, body } = await req.json();
+
+    console.log("http-bridge invoked. Target URL:", url);
+    console.log("Request body:", body);
 
     if (!url || !body) {
       return new Response(
@@ -25,6 +27,8 @@ Deno.serve(async (req) => {
 
     const data = await response.json();
 
+    console.log("Response from handle-transaction-update:", data);
+
     return new Response(
       JSON.stringify({ data }),
       {
@@ -37,6 +41,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     // Assert the error as an instance of Error to access the message property
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error in http-bridge:", errorMessage);
 
     return new Response(
       JSON.stringify({ error: errorMessage }),
