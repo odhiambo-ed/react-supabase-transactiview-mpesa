@@ -9,7 +9,7 @@ const Sidebar: React.FC = () => {
 
   return (
     <div className="d-flex flex-column vh-100 bg-dark text-white">
-      <Nav className="flex-column p-3">
+      <Nav className="flex-column p-3 pt-5">
         <Nav.Link as={Link} to="/" className="text-white">
           TransactiView
         </Nav.Link>
