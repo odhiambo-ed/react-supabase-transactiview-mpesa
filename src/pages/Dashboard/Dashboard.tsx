@@ -10,7 +10,7 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
-import { Table, Alert } from "react-bootstrap";
+import { Table, Alert, Pagination } from "react-bootstrap";
 import { supabase } from "../../contexts/AuthContext";
 import { Transaction, TransactionStats } from "../../types/types";
 import { ChartData, ChartOptions } from "chart.js";
@@ -33,12 +33,16 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 3; // Display 3 items per page
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Fetch transaction statistics
         const { data: statsData, error: statsError } = await supabase
-          .from("transaction_stats_view") // No generic type needed here
+          .from("transaction_stats_view")
           .select("*")
           .single();
 
@@ -47,9 +51,7 @@ const Dashboard: React.FC = () => {
 
         // Fetch individual transactions
         const { data: transactionsData, error: transactionsError } =
-          await supabase
-            .from("transaction_status_view") // No generic type needed here
-            .select("*");
+          await supabase.from("transaction_status_view").select("*");
 
         if (transactionsError) throw transactionsError;
         setTransactions(transactionsData as Transaction[]);
@@ -137,6 +139,17 @@ const Dashboard: React.FC = () => {
     ],
   };
 
+  // Get current transactions for pagination
+  const indexOfLastTransaction = currentPage * itemsPerPage;
+  const indexOfFirstTransaction = indexOfLastTransaction - itemsPerPage;
+  const currentTransactions = transactions.slice(
+    indexOfFirstTransaction,
+    indexOfLastTransaction
+  );
+
+  // Change page
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
   return (
     <div>
       <h2>Dashboard</h2>
@@ -169,7 +182,7 @@ const Dashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {transactions.map((transaction) => (
+                {currentTransactions.map((transaction) => (
                   <tr key={transaction.mpesa_receipt_number}>
                     <td>{transaction.mpesa_receipt_number}</td>
                     <td>{transaction.phone}</td>
@@ -185,6 +198,22 @@ const Dashboard: React.FC = () => {
                 ))}
               </tbody>
             </Table>
+
+            {/* Pagination */}
+            <Pagination>
+              {Array.from(
+                { length: Math.ceil(transactions.length / itemsPerPage) },
+                (_, index) => (
+                  <Pagination.Item
+                    key={index + 1}
+                    active={index + 1 === currentPage}
+                    onClick={() => paginate(index + 1)}
+                  >
+                    {index + 1}
+                  </Pagination.Item>
+                )
+              )}
+            </Pagination>
           </div>
         </>
       )}
