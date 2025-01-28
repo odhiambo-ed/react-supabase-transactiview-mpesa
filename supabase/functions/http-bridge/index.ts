@@ -1,32 +1,49 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
-
-// Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-
-console.log("Hello from Functions!")
+// supabase/functions/http-bridge/index.ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 Deno.serve(async (req) => {
-  const { name } = await req.json()
-  const data = {
-    message: `Hello ${name}!`,
+  try {
+    const { url, body } = await req.json();
+
+    if (!url || !body) {
+      return new Response(
+        JSON.stringify({ error: "Missing url or body" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+
+    return new Response(
+      JSON.stringify({ data }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        status: response.status,
+      }
+    );
+  } catch (error) {
+    // Assert the error as an instance of Error to access the message property
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
-
-  return new Response(
-    JSON.stringify(data),
-    { headers: { "Content-Type": "application/json" } },
-  )
-})
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/http-bridge' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
-
-*/
+});
