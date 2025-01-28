@@ -1,0 +1,79 @@
+/* src/pages/Dashboard/Dashboard.css */
+.dashboard {
+  padding: 20px;
+}
+
+.stat-card {
+  transition: transform 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+}
+
+/* src/pages/HomePage/HomePage.css */
+.home-hero {
+  background: linear-gradient(135deg, #0061f2 0%, #00ba88 100%);
+  color: white;
+  padding: 4rem 0;
+  margin-bottom: 2rem;
+}
+
+.feature-card {
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* src/components/Layout/Sidebar.css */
+.sidebar {
+  width: 250px;
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar .nav-link {
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  margin-bottom: 0.25rem;
+  transition: all 0.2s;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+  font-weight: 600;
+}
+
+/* src/pages/Payment/Payment.css */
+.payment-form {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.payment-status {
+  margin-top: 2rem;
+  padding: 1rem;
+  border-radius: 0.25rem;
+}
+
+.payment-status.success {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+.payment-status.error {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}

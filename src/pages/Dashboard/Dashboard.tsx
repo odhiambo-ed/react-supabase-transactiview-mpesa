@@ -1,202 +1,183 @@
-import React, { useState, useEffect } from "react";
-import { Bar, Pie } from "react-chartjs-2"; // getElementsAtEvent
+// src/pages/Dashboard/Dashboard.tsx
+import React, { useEffect, useState } from "react";
+import { Row, Col, Spinner } from "react-bootstrap";
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-} from "chart.js";
-import { Table, Alert } from "react-bootstrap";
-import { supabase } from "../../contexts/AuthContext";
-import { Transaction, TransactionStats } from "../../types/types";
-
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
+  FiDollarSign,
+  FiClock,
+  FiCheckCircle,
+  FiActivity,
+} from "react-icons/fi";
+import { StatCard } from "../../components/Dashboard/StatCard";
+import { TransactionChart } from "../../components/Dashboard/TransactionChart";
+import { RecentTransactions } from "../../components/Dashboard/RecentTransactions";
+import { supabase } from "../../lib/supabase";
+import { TransactionStats, Transaction } from "../../types/transaction";
+import { formatCurrency } from "../../utils/formatters";
+import "./Dashboard.css";
 
 const Dashboard: React.FC = () => {
-  const [transactionStats, setTransactionStats] =
-    useState<TransactionStats | null>(null);
+  const [stats, setStats] = useState<TransactionStats | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch transaction statistics
-        const { data: statsData, error: statsError } = await supabase
-          .from<TransactionStats>("transaction_stats_view")
-          .select("*")
-          .single();
-
-        if (statsError) throw statsError;
-        setTransactionStats(statsData);
-
-        // Fetch individual transactions
-        const { data: transactionsData, error: transactionsError } =
-          await supabase
-            .from<Transaction>("transaction_status_view")
-            .select("*");
-
-        if (transactionsError) throw transactionsError;
-        setTransactions(transactionsData);
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "An unknown error occurred while fetching data."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    fetchDashboardData();
   }, []);
 
-  // Chart.js options
-  const barChartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: "top" as const,
-      },
-      title: {
-        display: true,
-        text: "Transaction Statistics",
-      },
-    },
+  const fetchDashboardData = async () => {
+    try {
+      const [statsResponse, transactionsResponse] = await Promise.all([
+        supabase.from("transaction_stats_view").select("*").single(),
+        supabase
+          .from("transaction_status_view")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(10),
+      ]);
+
+      if (statsResponse.data) setStats(statsResponse.data);
+      if (transactionsResponse.data) setTransactions(transactionsResponse.data);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const pieChartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: "bottom" as const,
-      },
-      title: {
-        display: true,
-        text: "Transaction Status Distribution",
-      },
-    },
-  };
-
-  // Chart.js data
-  const barChartData = {
-    labels: ["Completed", "Pending", "Failed"],
-    datasets: [
-      {
-        label: "Number of Transactions",
-        data: transactionStats
-          ? [
-              transactionStats.completed_transactions,
-              transactionStats.pending_transactions,
-              transactionStats.failed_transactions,
-            ]
-          : [],
-        backgroundColor: [
-          "rgba(75, 192, 192, 0.6)",
-          "rgba(255, 206, 86, 0.6)",
-          "rgba(255, 99, 132, 0.6)",
-        ],
-      },
-    ],
-  };
-
-  const pieChartData = {
-    labels: ["Completed", "Pending", "Failed"],
-    datasets: [
-      {
-        label: "Transaction Status",
-        data: transactionStats
-          ? [
-              transactionStats.completed_transactions,
-              transactionStats.pending_transactions,
-              transactionStats.failed_transactions,
-            ]
-          : [],
-        backgroundColor: [
-          "rgba(75, 192, 192, 0.6)",
-          "rgba(255, 206, 86, 0.6)",
-          "rgba(255, 99, 132, 0.6)",
-        ],
-      },
-    ],
-  };
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center min-vh-100">
+        <Spinner animation="border" />
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h2>Dashboard</h2>
+    <div className="dashboard">
+      <h2 className="mb-4">Dashboard</h2>
 
-      {loading && <p>Loading data...</p>}
-      {error && <Alert variant="danger">{error}</Alert>}
+      <Row className="g-4 mb-4">
+        <Col md={3}>
+          <StatCard
+            title="Total Transactions"
+            value={stats?.total_transactions || 0}
+            icon={<FiActivity size={24} className="text-primary" />}
+          />
+        </Col>
+        <Col md={3}>
+          <StatCard
+            title="Completed"
+            value={stats?.completed_transactions || 0}
+            icon={<FiCheckCircle size={24} className="text-success" />}
+          />
+        </Col>
+        <Col md={3}>
+          <StatCard
+            title="Total Amount"
+            value={formatCurrency(stats?.total_amount_completed || 0)}
+            icon={<FiDollarSign size={24} className="text-warning" />}
+          />
+        </Col>
+        <Col md={3}>
+          <StatCard
+            title="Avg. Time"
+            value={`${stats?.avg_completion_time_minutes.toFixed(1) || 0} min`}
+            icon={<FiClock size={24} className="text-info" />}
+          />
+        </Col>
+      </Row>
 
-      {!loading && !error && (
-        <>
-          <div className="row">
-            <div className="col-md-6 mb-4">
-              <Bar options={barChartOptions} data={barChartData} />
-            </div>
-            <div className="col-md-6 mb-4">
-              <Pie options={pieChartOptions} data={pieChartData} />
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <h4>Transaction Details</h4>
-            <Table striped bordered hover>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Receipt #</th>
-                  <th>Phone</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Created At</th>
-                  <th>Completed At</th>
-                  <th>Callback Data</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((transaction) => (
-                  <tr key={transaction.id}>
-                    <td>{transaction.id}</td>
-                    <td>{transaction.mpesa_receipt_number}</td>
-                    <td>{transaction.phone}</td>
-                    <td>{transaction.amount}</td>
-                    <td>{transaction.status}</td>
-                    <td>{new Date(transaction.created_at).toLocaleString()}</td>
-                    <td>
-                      {transaction.completed_at
-                        ? new Date(transaction.completed_at).toLocaleString()
-                        : "-"}
-                    </td>
-                    <td>
-                      <pre>
-                        {JSON.stringify(transaction.callback_data, null, 2)}
-                      </pre>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-        </>
-      )}
+      <Row className="g-4">
+        <Col md={6}>{stats && <TransactionChart stats={stats} />}</Col>
+        <Col md={6}>
+          <RecentTransactions transactions={transactions} />
+        </Col>
+      </Row>
     </div>
   );
 };
 
-export default Dashboard;
+// src/pages/HomePage/HomePage.tsx
+import React from "react";
+import { Container, Row, Col, Card, Button } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import "./HomePage.css";
+
+const HomePage: React.FC = () => {
+  const { user } = useAuth();
+
+  return (
+    <Container className="py-5">
+      <Row className="mb-5">
+        <Col>
+          <h1>Welcome {user?.user_metadata?.full_name || "Back"}!</h1>
+          <p className="lead">
+            Manage your payments with ease using TransactiView
+          </p>
+        </Col>
+      </Row>
+
+      <Row className="g-4">
+        <Col md={4}>
+          <Card>
+            <Card.Body>
+              <Card.Title>Make Payment</Card.Title>
+              <Card.Text>
+                Initiate a new M-Pesa payment quickly and securely.
+              </Card.Text>
+              <Link to="/payment">
+                <Button variant="primary">Pay Now</Button>
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col md={4}>
+          <Card>
+            <Card.Body>
+              <Card.Title>View Transactions</Card.Title>
+              <Card.Text>
+                Check your transaction history and payment status.
+              </Card.Text>
+              <Link to="/dashboard">
+                <Button variant="outline-primary">View Dashboard</Button>
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col md={4}>
+          <Card>
+            <Card.Body>
+              <Card.Title>Need Help?</Card.Title>
+              <Card.Text>
+                Having issues with your payment? We're here to help.
+              </Card.Text>
+              <Button variant="outline-secondary">Contact Support</Button>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
+  );
+};
+
+// src/pages/Payment/Payment.tsx
+import React from "react";
+import { Container, Card } from "react-bootstrap";
+import PaymentForm from "../../components/PaymentForm/PaymentForm";
+import "./Payment.css";
+
+const Payment: React.FC = () => {
+  return (
+    <Container className="py-4">
+      <Card>
+        <Card.Body>
+          <h2 className="mb-4">Make Payment</h2>
+          <PaymentForm />
+        </Card.Body>
+      </Card>
+    </Container>
+  );
+};
