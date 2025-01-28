@@ -13,7 +13,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 Deno.serve(async (req) => {
   try {
-    const { transactionId } = await req.json();
+    const body = await req.json();
+    // Extract transactionId from the request body
+    const transactionId = body?.transactionId; // Correctly extract transactionId
 
     if (!transactionId) {
       console.error("Transaction ID not found in the request body.");
@@ -26,7 +28,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log("handle-transaction-update invoked for transaction:", transactionId);
+    console.log(
+      "handle-transaction-update invoked for transaction:",
+      transactionId,
+    );
 
     // Simulate payment processing time
     await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -34,6 +39,19 @@ Deno.serve(async (req) => {
     // Randomly determine success or failure (90% success, 10% failure)
     const isSuccess = Math.random() < 0.9;
     const newStatus = isSuccess ? "completed" : "failed";
+
+    // Fetch the transaction first
+    const { data: transactionData, error: transactionError } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("id", transactionId)
+      .single();
+
+    if (transactionError) {
+      throw new Error(
+        `Failed to fetch transaction: ${transactionError.message}`,
+      );
+    }
 
     // Update transaction status
     const { error: updateError } = await supabase
@@ -50,16 +68,6 @@ Deno.serve(async (req) => {
 
     // If successful, insert dummy callback data
     if (isSuccess) {
-      const { data: transactionData, error: transactionError } = await supabase
-        .from("transactions")
-        .select("*")
-        .eq("id", transactionId)
-        .single();
-
-      if (transactionError) {
-        throw new Error(`Failed to fetch transaction: ${transactionError.message}`);
-      }
-
       const dummyCallbackData = {
         Body: {
           stkCallback: {
@@ -71,11 +79,11 @@ Deno.serve(async (req) => {
               Item: [
                 {
                   Name: "Amount",
-                  Value: transactionData.amount,
+                  Value: transactionData.amount, // Use fetched amount
                 },
                 {
                   Name: "MpesaReceiptNumber",
-                  Value: transactionData.mpesa_receipt_number,
+                  Value: transactionData.mpesa_receipt_number, // Use fetched mpesa_receipt_number
                 },
                 {
                   Name: "TransactionDate",
@@ -83,7 +91,7 @@ Deno.serve(async (req) => {
                 },
                 {
                   Name: "PhoneNumber",
-                  Value: transactionData.phone,
+                  Value: transactionData.phone, // Use fetched phone number
                 },
               ],
             },
@@ -100,7 +108,7 @@ Deno.serve(async (req) => {
 
       if (callbackError) {
         throw new Error(
-          `Failed to insert callback data: ${callbackError.message}`
+          `Failed to insert callback data: ${callbackError.message}`,
         );
       }
     }
