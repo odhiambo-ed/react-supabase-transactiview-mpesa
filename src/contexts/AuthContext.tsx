@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { createClient, User, Session } from "@supabase/supabase-js";
 
-// Initialize Supabase client (make sure to replace with your Supabase URL and Anon Key)
-const supabaseUrl = "YOUR_SUPABASE_URL";
-const supabaseAnonKey = "YOUR_SUPABASE_ANON_KEY";
+// Load Supabase credentials from environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Initialize Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface AuthContextProps {
