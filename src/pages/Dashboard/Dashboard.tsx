@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Bar, Pie } from "react-chartjs-2"; // getElementsAtEvent
+import { Bar, Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,6 +13,7 @@ import {
 import { Table, Alert } from "react-bootstrap";
 import { supabase } from "../../contexts/AuthContext";
 import { Transaction, TransactionStats } from "../../types/types";
+import { ChartData, ChartOptions } from "chart.js";
 
 // Register Chart.js components
 ChartJS.register(
@@ -67,11 +68,11 @@ const Dashboard: React.FC = () => {
   }, []);
 
   // Chart.js options
-  const barChartOptions = {
+  const barChartOptions: ChartOptions<"bar"> = {
     responsive: true,
     plugins: {
       legend: {
-        position: "top" as const,
+        position: "top",
       },
       title: {
         display: true,
@@ -80,11 +81,11 @@ const Dashboard: React.FC = () => {
     },
   };
 
-  const pieChartOptions = {
+  const pieChartOptions: ChartOptions<"pie"> = {
     responsive: true,
     plugins: {
       legend: {
-        position: "bottom" as const,
+        position: "bottom",
       },
       title: {
         display: true,
@@ -94,7 +95,7 @@ const Dashboard: React.FC = () => {
   };
 
   // Chart.js data
-  const barChartData = {
+  const barChartData: ChartData<"bar", number[], string> = {
     labels: ["Completed", "Pending", "Failed"],
     datasets: [
       {
@@ -115,7 +116,7 @@ const Dashboard: React.FC = () => {
     ],
   };
 
-  const pieChartData = {
+  const pieChartData: ChartData<"pie", number[], string> = {
     labels: ["Completed", "Pending", "Failed"],
     datasets: [
       {
@@ -147,10 +148,10 @@ const Dashboard: React.FC = () => {
         <>
           <div className="row">
             <div className="col-md-6 mb-4">
-              <Bar options={barChartOptions} data={barChartData} />
+              <Bar options={barChartOptions} data={barChartData} type="bar" />
             </div>
             <div className="col-md-6 mb-4">
-              <Pie options={pieChartOptions} data={pieChartData} />
+              <Pie options={pieChartOptions} data={pieChartData} type="pie" />
             </div>
           </div>
 
