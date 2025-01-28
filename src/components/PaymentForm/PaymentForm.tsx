@@ -107,7 +107,7 @@ const PaymentForm = () => {
           <Form.Label>Phone Number</Form.Label>
           <Form.Control
             type="text"
-            placeholder="Enter phone number (e.g., 254...)"
+            placeholder="254xxxxxxxxx"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             required
