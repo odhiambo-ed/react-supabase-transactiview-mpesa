@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { createClient, User, Session } from "@supabase/supabase-js";
 
 // Load Supabase credentials from environment variables
@@ -17,7 +23,7 @@ interface AuthContextProps {
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -27,14 +33,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Supabase auth event:", event);
-
-        // Log the session details for debugging
-        console.log("Supabase session details:", session);
-
         setSession(session);
         setUser(session?.user || null);
-
-        // Additional logging to check if state is updated
         console.log("Session and User updated:", session, session?.user);
       }
     );
@@ -48,17 +48,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
+        options: {
+          redirectTo:
+            import.meta.env.MODE === "development"
+              ? "http://localhost:5173/auth/callback"
+              : "https://lceqxhhumahvtzkicksx.supabase.co/auth/v1/callback",
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+        },
       });
 
       if (error) {
         console.error("Error during Google sign-in:", error);
-        throw error; // Re-throw the error to be caught by the caller
+        throw error;
       }
-
-      // Optionally, you can handle successful sign-in here if needed
     } catch (error) {
       console.error("Unhandled error during Google sign-in:", error);
-      // Handle the error appropriately, e.g., show an error message to the user
     }
   };
 
@@ -67,10 +74,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (error) {
       console.error("Error during sign-out:", error);
-      // Handle the error appropriately, e.g., show an error message to the user
     } else {
       console.log("User signed out successfully");
-      // Perform any additional cleanup or state reset if necessary
     }
   };
 
