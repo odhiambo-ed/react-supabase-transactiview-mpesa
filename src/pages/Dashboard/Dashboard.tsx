@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Bar, Pie, getElementsAtEvent } from "react-chartjs-2";
+import { Bar, Pie } from "react-chartjs-2"; // getElementsAtEvent
 import {
   Chart as ChartJS,
   CategoryScale,
