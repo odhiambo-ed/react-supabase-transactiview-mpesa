@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
     const { data: insertedTransaction, error: insertError } = await supabase
       .from("transactions")
       .insert({
-        mpesa_receipt_number: transactionId, // Use generated ID
+        mpesa_receipt_number: transactionId,
         phone,
         amount,
         status: "pending",
@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
     // Prepare request body for Quikk API
     const requestBody = JSON.stringify({
       data: {
-        id: transactionId, // Use the same transaction ID
+        id: transactionId,
         type: "charge",
         attributes: {
           amount: amount,
@@ -144,7 +144,6 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // No Authorization header needed when using --no-verify-jwt
       },
       body: JSON.stringify({ transactionId: insertedTransaction[0].id })
     });
