@@ -7,11 +7,11 @@ const TopNavbar: React.FC = () => {
     <Navbar bg="dark" variant="dark">
       <Container>
         <Navbar.Brand href="#home" className="">
-          Code
+          Transacti
           <span>
             <RiSecurePaymentLine />
           </span>
-          Cafe
+          View
         </Navbar.Brand>
       </Container>
     </Navbar>
