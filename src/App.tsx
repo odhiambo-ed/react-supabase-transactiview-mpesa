@@ -11,6 +11,9 @@ import { useAuth } from "./contexts/AuthContext";
 const App: React.FC = () => {
   const { user } = useAuth();
 
+  // Debugging: Log the user object to check if it's updated after login
+  console.log("User object in App.tsx:", user);
+
   return (
     <BrowserRouter>
       <Routes>
