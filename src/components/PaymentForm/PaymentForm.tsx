@@ -12,6 +12,10 @@ const PaymentForm = () => {
   const intervalRef = useRef<null | NodeJS.Timeout>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
 
+  // Timers for success and error messages
+  const successTimerRef = useRef<null | NodeJS.Timeout>(null);
+  const errorTimerRef = useRef<null | NodeJS.Timeout>(null);
+
   // Function to check the status of the transaction
   const checkTransactionStatus = async (transactionId: string) => {
     try {
@@ -32,12 +36,22 @@ const PaymentForm = () => {
             clearInterval(intervalRef.current);
           }
           setLoading(false);
+
+          // Set a timer to clear the success message after 5 seconds
+          successTimerRef.current = setTimeout(() => {
+            setSuccess(false);
+          }, 5000);
         } else if (data.status === "failed") {
           setError("Payment failed.");
           if (intervalRef.current) {
             clearInterval(intervalRef.current);
           }
           setLoading(false);
+
+          // Set a timer to clear the error message after 5 seconds
+          errorTimerRef.current = setTimeout(() => {
+            setError("");
+          }, 5000);
         }
       } else {
         throw new Error(data.message || "Failed to confirm payment status.");
@@ -48,6 +62,11 @@ const PaymentForm = () => {
           ? err.message
           : "Failed to fetch transaction status."
       );
+
+      // Set a timer to clear the error message after 5 seconds
+      errorTimerRef.current = setTimeout(() => {
+        setError("");
+      }, 5000);
     }
   };
 
@@ -83,6 +102,11 @@ const PaymentForm = () => {
         err instanceof Error ? err.message : "An unknown error occurred."
       );
       setLoading(false);
+
+      // Set a timer to clear the error message after 5 seconds
+      errorTimerRef.current = setTimeout(() => {
+        setError("");
+      }, 5000);
     }
   };
 
@@ -115,6 +139,18 @@ const PaymentForm = () => {
       clearForm();
     }
   }, [success]);
+
+  useEffect(() => {
+    return () => {
+      // Clear timers when the component unmounts
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current);
+      }
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div>
