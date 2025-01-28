@@ -13,9 +13,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 Deno.serve(async (req) => {
   try {
-    const body = await req.json();
-    // Extract transactionId from the request body
-    const transactionId = body?.body?.body?.id;
+    const { transactionId } = await req.json();
 
     if (!transactionId) {
       console.error("Transaction ID not found in the request body.");
@@ -52,6 +50,16 @@ Deno.serve(async (req) => {
 
     // If successful, insert dummy callback data
     if (isSuccess) {
+      const { data: transactionData, error: transactionError } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("id", transactionId)
+        .single();
+
+      if (transactionError) {
+        throw new Error(`Failed to fetch transaction: ${transactionError.message}`);
+      }
+
       const dummyCallbackData = {
         Body: {
           stkCallback: {
@@ -63,11 +71,11 @@ Deno.serve(async (req) => {
               Item: [
                 {
                   Name: "Amount",
-                  Value: body?.body?.body?.amount,
+                  Value: transactionData.amount,
                 },
                 {
                   Name: "MpesaReceiptNumber",
-                  Value: body?.body?.body?.mpesa_receipt_number,
+                  Value: transactionData.mpesa_receipt_number,
                 },
                 {
                   Name: "TransactionDate",
@@ -75,7 +83,7 @@ Deno.serve(async (req) => {
                 },
                 {
                   Name: "PhoneNumber",
-                  Value: body?.body?.body?.phone,
+                  Value: transactionData.phone,
                 },
               ],
             },
