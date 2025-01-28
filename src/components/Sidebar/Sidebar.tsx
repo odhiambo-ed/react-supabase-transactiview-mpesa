@@ -24,11 +24,6 @@ const Sidebar: React.FC = () => {
         </Nav.Link>
       </Nav>
       <div className="mt-auto p-3">
-        <Nav.Link as={Link} to="/payment">
-          <button className="btn btn-primary w-100">Pay Now</button>
-        </Nav.Link>
-      </div>
-      <div className="mt-auto p-3">
         <button className="btn btn-danger w-100" onClick={signOut}>
           Logout
         </button>
