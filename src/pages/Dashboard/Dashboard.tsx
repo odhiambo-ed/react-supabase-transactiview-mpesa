@@ -147,10 +147,10 @@ const Dashboard: React.FC = () => {
       {!loading && !error && (
         <>
           <div className="row">
-            <div className="col-md-6 mb-4">
+            <div className="col-md-4 mb-4">
               <Bar options={barChartOptions} data={barChartData} />
             </div>
-            <div className="col-md-6 mb-4">
+            <div className="col-md-4 mb-4">
               <Pie options={pieChartOptions} data={pieChartData} />
             </div>
           </div>
@@ -160,20 +160,17 @@ const Dashboard: React.FC = () => {
             <Table striped bordered hover>
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>Receipt #</th>
                   <th>Phone</th>
                   <th>Amount</th>
                   <th>Status</th>
                   <th>Created At</th>
                   <th>Completed At</th>
-                  <th>Callback Data</th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.map((transaction) => (
-                  <tr key={transaction.id}>
-                    <td>{transaction.id}</td>
+                  <tr key={transaction.mpesa_receipt_number}>
                     <td>{transaction.mpesa_receipt_number}</td>
                     <td>{transaction.phone}</td>
                     <td>{transaction.amount}</td>
@@ -183,11 +180,6 @@ const Dashboard: React.FC = () => {
                       {transaction.completed_at
                         ? new Date(transaction.completed_at).toLocaleString()
                         : "-"}
-                    </td>
-                    <td>
-                      <pre>
-                        {JSON.stringify(transaction.callback_data, null, 2)}
-                      </pre>
                     </td>
                   </tr>
                 ))}
