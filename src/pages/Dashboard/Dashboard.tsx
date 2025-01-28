@@ -35,7 +35,7 @@ const Dashboard: React.FC = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 3; 
+  const itemsPerPage = 4; 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -160,10 +160,10 @@ const Dashboard: React.FC = () => {
       {!loading && !error && (
         <>
           <div className="row">
-            <div className="col-md-4 mb-4">
+            <div className="col-md-6 mb-2">
               <Bar options={barChartOptions} data={barChartData} />
             </div>
-            <div className="col-md-4 mb-4">
+            <div className="col-md-6 mb-2">
               <Pie options={pieChartOptions} data={pieChartData} />
             </div>
           </div>
