@@ -26,11 +26,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Debugging: Log the Supabase auth event
         console.log("Supabase auth event:", event);
+
+        // Log the session details for debugging
+        console.log("Supabase session details:", session);
 
         setSession(session);
         setUser(session?.user || null);
+
+        // Additional logging to check if state is updated
+        console.log("Session and User updated:", session, session?.user);
       }
     );
 
@@ -41,17 +46,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signInWithGoogle = async () => {
     try {
-      await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
       });
+
+      if (error) {
+        console.error("Error during Google sign-in:", error);
+        throw error; // Re-throw the error to be caught by the caller
+      }
+
+      // Optionally, you can handle successful sign-in here if needed
     } catch (error) {
-      // Debugging: Log any errors during sign-in
-      console.error("Error during Google sign-in:", error);
+      console.error("Unhandled error during Google sign-in:", error);
+      // Handle the error appropriately, e.g., show an error message to the user
     }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error("Error during sign-out:", error);
+      // Handle the error appropriately, e.g., show an error message to the user
+    } else {
+      console.log("User signed out successfully");
+      // Perform any additional cleanup or state reset if necessary
+    }
   };
 
   const value: AuthContextProps = {
