@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Headers": "Content-Type",
         },
       });
     }
@@ -140,22 +140,29 @@ Deno.serve(async (req) => {
     const responseData = await makePostRequest(requestBody);
 
     // Call handle-transaction-update to simulate callback after inserting the transaction
-    fetch('https://lceqxhhumahvtzkicksx.supabase.co/functions/v1/handle-transaction-update', {
+    const callbackResponse = await fetch('https://lceqxhhumahvtzkicksx.supabase.co/functions/v1/handle-transaction-update', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        // No Authorization header needed when using --no-verify-jwt
       },
       body: JSON.stringify({ transactionId: insertedTransaction[0].id })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Failed to simulate payment callback');
-      }
-      return response.json();
-    })
-    .then(data => console.log('Callback simulation response:', data))
-    .catch(error => console.error('Error simulating callback:', error));
+    });
+
+    if (!callbackResponse.ok) {
+      const errorData = await callbackResponse.text();
+      console.error("Error simulating callback:", callbackResponse.status, errorData);
+      return new Response(
+        JSON.stringify({ error: "Failed to simulate payment callback" }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        },
+      );
+    }
 
     // Return success response with transaction_id (database ID)
     return new Response(
