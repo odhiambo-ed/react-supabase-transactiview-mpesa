@@ -35,7 +35,7 @@ const Dashboard: React.FC = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 3; // Display 3 items per page
+  const itemsPerPage = 3; 
 
   useEffect(() => {
     const fetchData = async () => {
