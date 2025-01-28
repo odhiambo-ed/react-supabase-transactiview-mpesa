@@ -9,7 +9,7 @@ const TopNavbar: React.FC = () => {
         <Navbar.Brand href="#home" className="">
           Transacti
           <span>
-            <RiSecurePaymentLine />
+            <RiSecurePaymentLine size={50} />
           </span>
           View
         </Navbar.Brand>
