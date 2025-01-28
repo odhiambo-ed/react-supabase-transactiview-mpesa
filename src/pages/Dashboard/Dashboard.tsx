@@ -38,21 +38,21 @@ const Dashboard: React.FC = () => {
       try {
         // Fetch transaction statistics
         const { data: statsData, error: statsError } = await supabase
-          .from<TransactionStats>("transaction_stats_view")
+          .from("transaction_stats_view") // No generic type needed here
           .select("*")
           .single();
 
         if (statsError) throw statsError;
-        setTransactionStats(statsData);
+        setTransactionStats(statsData as TransactionStats);
 
         // Fetch individual transactions
         const { data: transactionsData, error: transactionsError } =
           await supabase
-            .from<Transaction>("transaction_status_view")
+            .from("transaction_status_view") // No generic type needed here
             .select("*");
 
         if (transactionsError) throw transactionsError;
-        setTransactions(transactionsData);
+        setTransactions(transactionsData as Transaction[]);
       } catch (err) {
         setError(
           err instanceof Error
@@ -148,10 +148,10 @@ const Dashboard: React.FC = () => {
         <>
           <div className="row">
             <div className="col-md-6 mb-4">
-              <Bar options={barChartOptions} data={barChartData} type="bar" />
+              <Bar options={barChartOptions} data={barChartData} />
             </div>
             <div className="col-md-6 mb-4">
-              <Pie options={pieChartOptions} data={pieChartData} type="pie" />
+              <Pie options={pieChartOptions} data={pieChartData} />
             </div>
           </div>
 
