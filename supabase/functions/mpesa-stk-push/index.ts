@@ -139,12 +139,12 @@ Deno.serve(async (req) => {
     // Make request to Quikk API
     const responseData = await makePostRequest(requestBody);
 
-    // Return success response with resourceId from Quikk API
+    // Return success response with transaction_id (database ID)
     return new Response(
       JSON.stringify({
         status: "success",
         data: responseData,
-        transaction_id: insertedTransaction[0].id,
+        transaction_id: insertedTransaction[0].id, // Return the ID of the inserted transaction
       }),
       {
         headers: {
