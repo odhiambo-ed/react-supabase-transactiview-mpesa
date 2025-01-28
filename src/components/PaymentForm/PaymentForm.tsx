@@ -51,7 +51,7 @@ const PaymentForm = () => {
     }
   };
 
-  const handleSubmit = async (e: { preventDefault: () => void }) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -99,6 +99,22 @@ const PaymentForm = () => {
       }
     };
   }, [paymentInitiated, transactionId, success, error]);
+
+  // Function to clear the form fields
+  const clearForm = () => {
+    setPhone("");
+    setAmount(0);
+    setTransactionRef("");
+    setPaymentInitiated(false);
+    setTransactionId(null);
+  };
+
+  useEffect(() => {
+    // Clear the form when a payment is successful
+    if (success) {
+      clearForm();
+    }
+  }, [success]);
 
   return (
     <div>
