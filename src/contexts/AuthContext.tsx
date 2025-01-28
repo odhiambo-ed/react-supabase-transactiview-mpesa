@@ -26,6 +26,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Debugging: Log the Supabase auth event
+        console.log("Supabase auth event:", event);
+
         setSession(session);
         setUser(session?.user || null);
       }
@@ -37,9 +40,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-    });
+    try {
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+      });
+    } catch (error) {
+      // Debugging: Log any errors during sign-in
+      console.error("Error during Google sign-in:", error);
+    }
   };
 
   const signOut = async () => {
